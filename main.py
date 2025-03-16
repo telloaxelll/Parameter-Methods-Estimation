@@ -7,7 +7,7 @@ Total number of samples that will be used to sample
 the space gap, velocity v(t) (speed of the trailing car),
 and velocity u(t) (which is the leading car).
 """
-time = 500 # Number of samples & Sample = Time (s)
+time = 1_000 # Number of samples & Sample = Time (s)
 delta_T = 1e-1 # Time step constant
 gap_noise = np.random.normal(0, 0.5, time) # Noise for space gap
 
@@ -48,6 +48,7 @@ plt.show()
 plt.figure(figsize=(15, 5))
 plt.plot(u_t, label="Lead Vehicle Velocity u_k", color="g", linestyle="dashed")
 plt.plot(v_t, label="ACC Vehicle Velocity v_k", color="r")
+plt.plot(s_t, label= "Space Gap", color="b")
 plt.xlabel("Time Step")
 plt.ylabel("Velocity (m/s)")
 plt.title("Velocity of Lead and ACC Vehicles")
