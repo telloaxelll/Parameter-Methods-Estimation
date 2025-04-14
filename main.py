@@ -57,7 +57,7 @@ for k in range(1, time):
     s_t[k] = s_prev + ds
     v_t[k] = v_prev + dv
 
-gamma_est = np.array([0.9, 0.01, 0.01])  # some initial guess for [gamma1, gamma2, gamma3]
+gamma_est = np.array([0.9, 0.01, 0.01])  # Some initial guess for [gamma1, gamma2, gamma3]
 P = np.eye(3)*1000.0
 
 gamma_history = np.zeros((time, 3))
@@ -68,7 +68,7 @@ def invert_gamma(gamma, dt):
     gamma1, gamma2, gamma3 = gamma
     alpha = gamma2/dt
     beta  = gamma3/dt
-    if abs(alpha) < 1e-8:
+    if abs(alpha) < 1e-8: # Certain tolerance for numerical stability 
         tau = 0.0  
     else:
         tau = ((1 - gamma1)/dt - beta) / alpha
@@ -78,7 +78,7 @@ def invert_gamma(gamma, dt):
 gamma_history[0] = gamma_est
 theta_history[0] = invert_gamma(gamma_est, dt)
 
-
+# RLS Algorithm:
 for k in range(1, time):
     # Y = v_t[k], X = [v_t[k-1], s_t[k-1], u_t[k-1]]
     Y = v_t[k]
