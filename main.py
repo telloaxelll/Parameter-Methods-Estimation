@@ -1,119 +1,167 @@
-# Author: Axel Muniz Tello 
-# Date: 03/26/2025
-# Description: This script is used to simulate the Recursive Least Squares (RLS) algorithm for online parameter estimation.
-#              The algorithm is used to estimate the parameters of the ACC model, which are alpha, beta, and tau.
-#              The script also plots the convergence of the estimated parameters and the error in the estimates.
-
-# Necessary Modules: 
+# Needed dependencies:
+import numpy as np
 import matplotlib.pyplot as plt
-import numpy as np 
+from functools import partial
 import os
 
-# Directory for saving plots
+# Create directory for plots 
 if not os.path.exists("plots"):
     os.makedirs("plots", exist_ok=True)
 
+# Parameters from paper 
+time = 900     
+dt   = 0.1  
+   
+np.random.seed(0)  
+
+# True parameters for ACC model
+alpha_true = 0.08
+beta_true  = 0.12
+tau_true   = 1.5
+
+# Intial conditions
+s0 = 30.0 
+v0 = 30.0
+u0 = 30.0 
+
 """
-Total number of samples that will be used to sample the space gap, 
-velocity v(t) (speed of the trailing car), and velocity u(t) (which is the leading car).
-"""
-time = 900 # Total number of samples
-delta_T = 1e-1 # Time step constant from paper
-gap_noise = np.random.normal(0, 0.5, time) # Noise for the space gap
-
-# Initial conditions for space gap, velocity v(t), and velocity u(t): 
-s_0 = 30 # Measured in meters (m)
-u_0 = 30 # Measured in meters per second (m/s)
-v_0 = 30 # Measured in meters per second (m/s)
-
-# True Theta Parameter Values:
-true_theta = np.array([0.08, 0.12, 1.5]) # true_theta[0] = alpha, true_theta[1] = beta, true_theta[2] = tau
-
-""" 
-Arrays for space gap s(t), velocity v(t), and velocity u(t). Uses "np.cumsum()" to ensure 
-that it's overall accumulation of previous s, v, and u. Data is more realistic, and the 
-changes aren't as drastic and makes the data more smooth.
+Generate data for ACC model:
+   1. Allocate array for u_t
+   2. Generate and append values into array with mean 0 and std 0.2
 """
 
-# Generate lead vehicle velocity
-u_t = u_0 + np.cumsum(np.random.normal(0, 0.2, time))  # Lead Vehicle Velocity
-v_t = v_0 + np.cumsum(np.random.normal(0, 0.2, time))  # ACC Vehicle Velocity
-delta_v = u_t - v_t  # Relative Velocity Between ACC and Lead Vehicle
-s_t = s_0 + np.cumsum(delta_v * delta_T + gap_noise)  # Space Gap Between ACC and Lead Vehicle
-
-# Recursive Least Squares (RLS) Initialization
-P = np.eye(3) * 1000  # Large initial covariance
-theta_hat = np.array([0.1, 0.1, 1.0])  # Initial guess for [alpha, beta, tau] arbitrary values
-
-# Storage for estimates
-theta_estimates = np.zeros((time, 3))
-
-# Recursive Least Squares (RLS) Algorithm: 
+u_t = np.zeros(time)
+u_t[0] = u0
 for k in range(1, time):
-    # X matrix from paper
-    X = np.array([
-        v_t[k - 1],  # v_k-1
-        s_t[k - 1],  # s_k-1
-        u_t[k - 1]   # u_k-1
-    ])
-    # Y matrix from paper
-    Y = v_t[k]  # Observed velocity at step k
-    
-    # Gain computation
-    K = P @ X / (1 + X.T @ P @ X)
-    
-    # Parameter update
-    theta_hat = theta_hat + K * (Y - X.T @ theta_hat)
-    
-    # Covariance update
-    P = P - np.outer(K, X.T @ P)
-    
-    # Store estimates
-    theta_estimates[k] = theta_hat
+    # small random increments
+    u_t[k] = u_t[k-1] + np.random.normal(loc=0, scale=0.2)
 
-# Plot estimated parameters with subplots
-time_axis = np.arange(time)
-fig, axes = plt.subplots(3, 1, figsize=(12, 10), sharex=True)
-params = ['alpha', 'beta', 'tau']
-true_values = [true_theta[0], true_theta[1], true_theta[2]]
-colors = ['r', 'g', 'b']
+"""
+Generate data for Space Gap and Velocity of Following vehicle:
+   1. Allocate array for s_t, v_t
+   2. Generate and append values into array using the ACC model equations
+"""
+s_t = np.zeros(time)
+v_t = np.zeros(time)
+s_t[0] = s0
+v_t[0] = v0
+
+for k in range(1, time):
+    s_prev = s_t[k-1]
+    v_prev = v_t[k-1]
+    u_prev = u_t[k-1]
+    
+    ds = (u_prev - v_prev) * dt
+    dv = (alpha_true*(s_prev - tau_true*v_prev) + beta_true*(u_prev - v_prev)) * dt
+
+    s_t[k] = s_prev + ds
+    v_t[k] = v_prev + dv
+
+gamma_est = np.array([0.9, 0.01, 0.01])  # some initial guess for [gamma1, gamma2, gamma3]
+P = np.eye(3)*1000.0
+
+gamma_history = np.zeros((time, 3))
+theta_history = np.zeros((time, 3))  # [alpha, beta, tau] at each step
+
+def invert_gamma(gamma, dt):
+    """Given gamma1, gamma2, gamma3 => alpha, beta, tau."""
+    gamma1, gamma2, gamma3 = gamma
+    alpha = gamma2/dt
+    beta  = gamma3/dt
+    if abs(alpha) < 1e-8:
+        tau = 0.0  
+    else:
+        tau = ((1 - gamma1)/dt - beta) / alpha
+    return alpha, beta, tau
+
+# Initialize
+gamma_history[0] = gamma_est
+theta_history[0] = invert_gamma(gamma_est, dt)
+
+
+for k in range(1, time):
+    # Y = v_t[k], X = [v_t[k-1], s_t[k-1], u_t[k-1]]
+    Y = v_t[k]
+    X = np.array([v_t[k-1], s_t[k-1], u_t[k-1]])
+    
+    denom = 1.0 + X @ P @ X
+    K = (P @ X) / denom
+    
+    # RLS update for gamma
+    gamma_est = gamma_est + K*(Y - X.dot(gamma_est))
+    P = P - np.outer(K, X.dot(P))
+    
+    gamma_history[k] = gamma_est
+    theta_history[k] = invert_gamma(gamma_est, dt)
+
+# Comparison between final alpha,beta,tau with ground truth
+# Compute absolute errors for each parameter over time
+errors = np.abs(theta_history - np.array([alpha_true, beta_true, tau_true]))
+alpha_est_final, beta_est_final, tau_est_final = theta_history[-1]
+print("Final estimated alpha = %.3f (true=%.3f)" % (alpha_est_final, alpha_true))
+print("Final estimated beta  = %.3f (true=%.3f)"  % (beta_est_final,  beta_true))
+print("Final estimated tau   = %.3f (true=%.3f)"   % (tau_est_final,   tau_true))
+
+
+# Plot - Alpha, Beta, Tau Convergence
+t_axis = np.arange(time)
+fig, axes = plt.subplots(3,1, figsize=(12,10), sharex=True)
+
+params  = ["alpha", "beta", "tau"]
+trueval = [alpha_true, beta_true, tau_true]
+colors  = ["r", "g", "b"]
 
 for i, ax in enumerate(axes):
-    ax.plot(time_axis, theta_estimates[:, i], label=f"Estimated {params[i]}", color=colors[i])
-    ax.axhline(y=true_values[i], color=colors[i], linestyle="dashed", label=f"True {params[i]}")
-    ax.fill_between(time_axis, theta_estimates[:, i] - 0.02, theta_estimates[:, i] + 0.02, color=colors[i], alpha=0.2)
-    ax.set_ylabel(f"{params[i]} Estimate")
+    ax.plot(t_axis, theta_history[:, i], label=f"Estimated {params[i]}", color=colors[i])
+    ax.axhline(y=trueval[i], color=colors[i], linestyle="--", label=f"True {params[i]}")
     ax.legend()
     ax.grid()
-    if i == 2:
-        ax.set_xlabel("Time Steps")
-
-plt.suptitle("RLS Online Parameter Estimation Convergence")
-plt.savefig("plots/rls_estimation_convergence.png")
+axes[-1].set_xlabel("Time step (k)")
+plt.suptitle("RLS Parameter Convergence via Gamma-Linearization")
+plt.savefig("plots/rls_estimation_convergence_gamma.png")
 plt.show()
 
+# Compute MAE and MSE
+mae = np.mean(errors, axis=1)  # mean absolute error at each time step
+mse = np.mean(errors**2, axis=1)  # mean squared error at each time step
 
-# Log-scale error plot for convergence tracking
-errors = np.abs(theta_estimates - np.array([true_theta[0], true_theta[1], true_theta(2)]))
-plt.figure(figsize=(12, 5))
-plt.semilogy(time_axis, errors, label=["Error in alpha", "Error in beta", "Error in tau"])
-plt.xlabel("Time Steps")
-plt.ylabel("Log Absolute Error")
+# Plot MAE and MSE over time
+plt.figure(figsize=(10,4))
+plt.plot(t_axis, mae, label="MAE", color="orange")
+plt.plot(t_axis, mse, label="MSE", color="purple")
+plt.grid()
+plt.xlabel("Time step (k)")
+plt.ylabel("Error Value")
+plt.title("MAE and MSE of Parameter Estimates")
+plt.legend()
+plt.savefig("plots/rls_mae_mse_gamma.png")
+plt.show()
+
+# Plot - Absolute Error in alpha, beta, tau
+errors = np.abs(theta_history - np.array([alpha_true, beta_true, tau_true]))
+plt.figure(figsize=(10,4))
+for i, param in enumerate(params):
+    plt.semilogy(t_axis, errors[:, i], label=f"Error in {param}")
+plt.grid()
+plt.xlabel("Time step (k)")
+plt.ylabel("Absolute Error (log scale)")
 plt.title("Convergence of RLS Parameter Estimates")
 plt.legend()
-plt.grid()
-plt.savefig("plots/rls_error_plot.png")
+plt.savefig("plots/rls_estimation_error_gamma.png")
 plt.show()
 
-# Plot: Velocity Comparison
-plt.figure(figsize=(15, 5))
-plt.plot(u_t, label="Lead Vehicle Velocity u_k", color="g", linestyle="dashed")
-plt.plot(v_t, label="ACC Vehicle Velocity v_k", color="r")
-plt.plot(s_t, label="Space Gap", color="b")
-plt.xlabel("Time Step")
-plt.ylabel("Velocity (m/s)")
-plt.title("Velocity of Lead and ACC Vehicles")
-plt.legend()
+"""
+Plot - Plots lead vehicle velocity (u_t), following vehicle velocity (v_t),
+       and space gap (s_t) over time.
+"""
+plt.figure(figsize=(12,5))
+plt.plot(u_t, label="Lead Vel (u)", linestyle="--", color="g")
+plt.plot(v_t, label="ACC Vel (v)", color="r")
+plt.plot(s_t, label="Space Gap (s)", color="b")
+plt.xlabel("Time step (k)")
+plt.ylabel("Value (m or m/s)")
+plt.title("ACC Model Data (Synthetic)")
 plt.grid()
-plt.savefig("plots/velocity_comparison.png")
+plt.legend()
+plt.savefig("plots/acc_model_data.png")
 plt.show()
