@@ -1,4 +1,3 @@
-# Needed dependencies:
 import numpy as np
 import matplotlib.pyplot as plt
 from functools import partial
@@ -11,7 +10,7 @@ if not os.path.exists("plots"):
 # Parameters from paper 
 time = 900     
 dt   = 0.1  
-   
+
 np.random.seed(0)  
 
 # True parameters for ACC model
@@ -127,7 +126,7 @@ mse = np.mean(errors**2, axis=1)  # mean squared error at each time step
 
 # Plot MAE and MSE over time
 plt.figure(figsize=(10,4))
-plt.plot(t_axis, mae, label="MAE", color="orange")
+plt.plot(t_axis, mae, label="MAE", color="green")
 plt.plot(t_axis, mse, label="MSE", color="purple")
 plt.grid()
 plt.xlabel("Time step (k)")
