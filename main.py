@@ -1,8 +1,22 @@
+# Necessary Modules:
 import numpy as np
 import matplotlib.pyplot as plt
 from functools import partial
 import os
 
+# Functions: 
+
+# Function to invert gamma to get alpha, beta, tau:
+def invert_gamma(gamma, dt):
+    """Given gamma1, gamma2, gamma3 => alpha, beta, tau."""
+    gamma1, gamma2, gamma3 = gamma
+    alpha = gamma2/dt
+    beta  = gamma3/dt
+    if abs(alpha) < 1e-8: # Certain tolerance for numerical stability
+        tau = 0.0
+    else:
+        tau = ((1 - gamma1)/dt - beta) / alpha
+    return alpha, beta, tau
 # Create directory for plots
 if not os.path.exists("plots"):
     os.makedirs("plots", exist_ok=True)
@@ -11,6 +25,7 @@ if not os.path.exists("plots"):
 time = 900
 dt   = 0.1
 
+# Set random seed for reproducibility
 np.random.seed(0)
 
 # True parameters for ACC model
@@ -19,7 +34,7 @@ beta_true  = 0.12
 tau_true   = 1.5
 
 # Intial conditions
-s0 = 30.0
+s0 = 30.0 
 v0 = 30.0
 u0 = 30.0
 
@@ -29,6 +44,7 @@ Generate data for ACC model:
    2. Generate and append values into array with mean 0 and std 0.2
 """
 
+# Allocates and updates entries with u_t values 
 u_t = np.zeros(time)
 u_t[0] = u0
 for k in range(1, time):
@@ -40,10 +56,13 @@ Generate data for Space Gap and Velocity of Following vehicle:
    1. Allocate array for s_t, v_t
    2. Generate and append values into array using the ACC model equations
 """
+# Memory allocation 
 s_t = np.zeros(time)
 v_t = np.zeros(time)
+
 s_t[0] = s0
 v_t[0] = v0
+
 
 for k in range(1, time):
     s_prev = s_t[k-1]
@@ -57,21 +76,10 @@ for k in range(1, time):
     v_t[k] = v_prev + dv
 
 gamma_est = np.array([0.9, 0.01, 0.01])  # Some initial guess for [gamma1, gamma2, gamma3]
-P = np.eye(3)*1000.0
+P = np.eye(3)*1000.0 # Initial covariance matrix
 
 gamma_history = np.zeros((time, 3))
 theta_history = np.zeros((time, 3))  # [alpha, beta, tau] at each step
-
-def invert_gamma(gamma, dt):
-    """Given gamma1, gamma2, gamma3 => alpha, beta, tau."""
-    gamma1, gamma2, gamma3 = gamma
-    alpha = gamma2/dt
-    beta  = gamma3/dt
-    if abs(alpha) < 1e-8: # Certain tolerance for numerical stability
-        tau = 0.0
-    else:
-        tau = ((1 - gamma1)/dt - beta) / alpha
-    return alpha, beta, tau
 
 # Initialize
 gamma_history[0] = gamma_est
