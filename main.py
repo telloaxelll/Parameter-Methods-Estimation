@@ -1,17 +1,20 @@
+"""
+Necessary Modules:
+"""
 import numpy as np
 import matplotlib.pyplot as plt
 from functools import partial
 import os
 
-# Create directory for plots 
+# Create directory for plots
 if not os.path.exists("plots"):
     os.makedirs("plots", exist_ok=True)
 
-# Parameters from paper 
-time = 900     
-dt   = 0.1  
+# Parameters from paper
+time = 900
+dt   = 0.1
 
-np.random.seed(0)  
+np.random.seed(0)
 
 # True parameters for ACC model
 alpha_true = 0.08
@@ -19,9 +22,9 @@ beta_true  = 0.12
 tau_true   = 1.5
 
 # Intial conditions
-s0 = 30.0 
+s0 = 30.0
 v0 = 30.0
-u0 = 30.0 
+u0 = 30.0
 
 """
 Generate data for ACC model:
@@ -49,7 +52,7 @@ for k in range(1, time):
     s_prev = s_t[k-1]
     v_prev = v_t[k-1]
     u_prev = u_t[k-1]
-    
+
     ds = (u_prev - v_prev) * dt
     dv = (alpha_true*(s_prev - tau_true*v_prev) + beta_true*(u_prev - v_prev)) * dt
 
@@ -67,8 +70,8 @@ def invert_gamma(gamma, dt):
     gamma1, gamma2, gamma3 = gamma
     alpha = gamma2/dt
     beta  = gamma3/dt
-    if abs(alpha) < 1e-8: # Certain tolerance for numerical stability 
-        tau = 0.0  
+    if abs(alpha) < 1e-8: # Certain tolerance for numerical stability
+        tau = 0.0
     else:
         tau = ((1 - gamma1)/dt - beta) / alpha
     return alpha, beta, tau
@@ -82,14 +85,14 @@ for k in range(1, time):
     # Y = v_t[k], X = [v_t[k-1], s_t[k-1], u_t[k-1]]
     Y = v_t[k]
     X = np.array([v_t[k-1], s_t[k-1], u_t[k-1]])
-    
+
     denom = 1.0 + X @ P @ X
     K = (P @ X) / denom
-    
+
     # RLS update for gamma
     gamma_est = gamma_est + K*(Y - X.dot(gamma_est))
     P = P - np.outer(K, X.dot(P))
-    
+
     gamma_history[k] = gamma_est
     theta_history[k] = invert_gamma(gamma_est, dt)
 
