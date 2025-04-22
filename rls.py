@@ -2,21 +2,9 @@
 import numpy as np
 import matplotlib.pyplot as plt
 from functools import partial
+from functions import * 
 import os
 
-# Functions: 
-
-# Function to invert gamma to get alpha, beta, tau:
-def invert_gamma(gamma, dt):
-    """Given gamma1, gamma2, gamma3 => alpha, beta, tau."""
-    gamma1, gamma2, gamma3 = gamma
-    alpha = gamma2/dt
-    beta  = gamma3/dt
-    if abs(alpha) < 1e-8: # Certain tolerance for numerical stability
-        tau = 0.0
-    else:
-        tau = ((1 - gamma1)/dt - beta) / alpha
-    return alpha, beta, tau
 # Create directory for plots
 if not os.path.exists("plots"):
     os.makedirs("plots", exist_ok=True)
@@ -47,7 +35,19 @@ Generate data for ACC model:
 # Allocates and updates entries with u_t values 
 u_t = np.zeros(time)
 u_t[0] = u0
+
 for k in range(1, time):
+    # Simulate a curve between time 300–340
+    #if 300 <= k < 340:
+        #u_t[k] = u_t[k-1] - 2.0  # sudden deceleration entering curve
+    #elif 340 <= k < 360:
+        #u_t[k] = u_t[k-1] + 1.0  # acceleration exiting curve
+    #else:
+        #u_t[k] = u_t[k-1] + np.random.normal(0, 0.2)
+
+    # Safety: keep velocity in physical range
+    #u_t[k] = np.clip(u_t[k], 0, 35)
+
     # small random increments
     u_t[k] = u_t[k-1] + np.random.normal(loc=0, scale=0.2)
 
@@ -56,7 +56,7 @@ Generate data for Space Gap and Velocity of Following vehicle:
    1. Allocate array for s_t, v_t
    2. Generate and append values into array using the ACC model equations
 """
-# Memory allocation 
+# Memory allocation for s_t and v_t:
 s_t = np.zeros(time)
 v_t = np.zeros(time)
 
@@ -132,7 +132,7 @@ plt.show()
 mae = np.mean(errors, axis=1)  # mean absolute error at each time step
 mse = np.mean(errors**2, axis=1)  # mean squared error at each time step
 
-# Plot MAE and MSE over time
+# Plot 1: Plot MAE and MSE over time
 plt.figure(figsize=(10,4))
 plt.plot(t_axis, mae, label="MAE", color="green")
 plt.plot(t_axis, mse, label="MSE", color="purple")
@@ -144,7 +144,7 @@ plt.legend()
 plt.savefig("plots/rls_mae_mse_gamma.png")
 plt.show()
 
-# Plot - Absolute Error in alpha, beta, tau
+# Plot 2: Absolute Error in alpha, beta, tau
 errors = np.abs(theta_history - np.array([alpha_true, beta_true, tau_true]))
 plt.figure(figsize=(10,4))
 for i, param in enumerate(params):
@@ -161,6 +161,7 @@ plt.show()
 Plot - Plots lead vehicle velocity (u_t), following vehicle velocity (v_t),
        and space gap (s_t) over time.
 """
+# Plot 3: All three plots in one figure:
 plt.figure(figsize=(12,5))
 plt.plot(u_t, label="Lead Vel (u)", linestyle="--", color="g")
 plt.plot(v_t, label="ACC Vel (v)", color="r")
@@ -171,4 +172,27 @@ plt.title("ACC Model Data (Synthetic)")
 plt.grid()
 plt.legend()
 plt.savefig("plots/acc_model_data.png")
+plt.show()
+
+# Plot 4: Velocities (Lead and Following)
+plt.figure(figsize=(12,5))
+plt.plot(u_t, label="Lead Vehicle Velocity (u_t)", linestyle="--", color="green")
+plt.plot(v_t, label="Following Vehicle Velocity (v_t)", color="red")
+plt.xlabel("Time step (k)")
+plt.ylabel("Velocity (m/s)")
+plt.title("Lead vs Following Vehicle Velocity")
+plt.grid()
+plt.legend()
+plt.savefig("plots/velocity_comparison.png")
+plt.show()
+
+# Plot 5: Space Gap
+plt.figure(figsize=(12,5))
+plt.plot(s_t, label="Space Gap (s_t)", color="blue")
+plt.xlabel("Time step (k)")
+plt.ylabel("Gap (m)")
+plt.title("Space Gap Between Vehicles")
+plt.grid()
+plt.legend()
+plt.savefig("plots/space_gap.png")
 plt.show()
