@@ -1,4 +1,4 @@
-# Necessary Modules:
+# Necessary Dependencies:
 import numpy as np
 import matplotlib.pyplot as plt
 from functools import partial
@@ -9,30 +9,27 @@ import os
 if not os.path.exists("plots"):
     os.makedirs("plots", exist_ok=True)
 
-# Parameters from paper
+# Parameters from paper:
 time = 900
 dt   = 0.1
 
 # Set random seed for reproducibility
 np.random.seed(0)
 
-# True parameters for ACC model
-alpha_true = 0.08
-beta_true  = 0.12
-tau_true   = 1.5
+# True parameters for ACC Model:
+theta = [0.08, 0.12, 1.5] # theta[0] = alpha, theta[1] = beta, theta[2] = tau
 
-# Intial conditions
-s0 = 30.0 
-v0 = 30.0
-u0 = 30.0
+# Initial Conditions for ACC Model:
+s0 = 60.0 
+v0 = 33.0
+u0 = 31.0
 
 """
-Generate data for ACC model:
-   1. Allocate array for u_t
-   2. Generate and append values into array with mean 0 and std 0.2
-"""
-
-# Allocates and updates entries with u_t values 
+This portion of the code will preallocate arrays of dimension (time) for 
+all of the vectors that we will be working with in the ACC model.
+    1. Allocates array for u_t (lead) and generates the rest of the trajectories of u_t (mean = 0, variance = 0.2)
+        1.5. Will simulate a curve 
+""" 
 u_t = np.zeros(time)
 u_t[0] = u0
 
