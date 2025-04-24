@@ -6,10 +6,11 @@ Top half of the file contains the functions that are used in the Recursive Least
 The bottom half of the file contains the functions that are used in Stochastic Gradient Descent (SGD) algorithm.
 """
 
+# RLS Function(s): 
 def invert_gamma(gamma, dt):
     """
     Given gamma1, gamma2, gamma3 = alpha, beta, tau, we are able to directly
-    solve for alpha, beta, tau by using the following equations:
+    solve for alpha, beta, tau by using the following equations algebraically:
     - alpha = gamma2 / dt
     - beta = gamma3 / dt
     - tau = ((1 - gamma1 - gamma3) / gamma2)
