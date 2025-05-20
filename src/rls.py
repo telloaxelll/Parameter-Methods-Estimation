@@ -25,9 +25,13 @@ from functools import partial
 from functions import * 
 import os
 
-# Checks if path exists, and creates it if not:
-if not os.path.exists("plots"):
-    os.makedirs("plots", exist_ok=True)
+# Creates directory:
+# Create plots directory relative to script location
+plot_dir = os.path.join(os.path.dirname(__file__), "..", "plots")
+os.makedirs(plot_dir, exist_ok=True)
+
+
+
 
 """
 Simulation Parameters and ACC Model Configuration
@@ -279,9 +283,12 @@ for i, ax in enumerate(axes):
     ax.grid()
 axes[-1].set_xlabel("Time step (k)")
 plt.suptitle("RLS Parameter Convergence")
-plt.savefig("plots/rls_estimation_convergence_gamma.png")
+plt.savefig(os.path.join(plot_dir, "rls_parameter_convergence.png"))
+plt.close()
 
 # Compute MAE and MSE
+errors = np.abs(theta_history - np.array([theta[0], theta[1], theta[2]]))
+
 mae = np.mean(errors, axis=1)  # mean absolute error at each time step
 mse = np.mean(errors**2, axis=1)  # mean squared error at each time step
 
@@ -304,10 +311,10 @@ plt.xlabel("Time step (k)")
 plt.ylabel("Error Value")
 plt.title("MAE and MSE of Parameter Estimates")
 plt.legend()
-plt.savefig("plots/rls_mae_mse_gamma.png")
+plt.savefig(os.path.join(plot_dir, "rls_MAE_MSE.png"))
+plt.close()
 
 # Plot 2: Absolute Error in alpha, beta, tau
-errors = np.abs(theta_history - np.array([theta[0], theta[1], theta[2]]))
 plt.figure(figsize=(10,4))
 for i, param in enumerate(params):
     plt.semilogy(t_axis, errors[:, i], label=f"Error in {param}")
@@ -316,8 +323,8 @@ plt.xlabel("Time step (k)")
 plt.ylabel("Absolute Error (log scale)")
 plt.title("Convergence of RLS Parameter Estimates")
 plt.legend()
-plt.savefig("plots/rls_estimation_error_gamma.png")
-
+plt.savefig(os.path.join(plot_dir, "rls_error_convergence.png"))
+plt.close()
 """
 Plot - Plots lead vehicle velocity (u_t), following vehicle velocity (v_t),
        and space gap (s_t) over time.
@@ -332,7 +339,8 @@ plt.ylabel("Value (m or m/s)")
 plt.title("ACC Model Data (Synthetic)")
 plt.grid()
 plt.legend()
-plt.savefig("plots/acc_model_data.png")
+plt.savefig(os.path.join(plot_dir, "ACC_model_data.png"))
+plt.close()
 
 # Plot 4: Velocities (Lead and Following)
 plt.figure(figsize=(12,5))
@@ -343,7 +351,8 @@ plt.ylabel("Velocity (m/s)")
 plt.title("Lead vs Following Vehicle Velocity")
 plt.grid()
 plt.legend()
-plt.savefig("plots/velocity_comparison.png")
+plt.savefig(os.path.join(plot_dir, "lead_following_velocity.png"))
+plt.close()
 
 # Plot 5: Space Gap
 plt.figure(figsize=(12,5))
@@ -353,4 +362,5 @@ plt.ylabel("Gap (m)")
 plt.title("Space Gap Between Vehicles")
 plt.grid()
 plt.legend()
-plt.savefig("plots/space_gap.png")
+plt.savefig(os.path.join(plot_dir, "space_gap.png"))
+plt.close()
