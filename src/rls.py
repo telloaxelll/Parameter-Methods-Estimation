@@ -1,5 +1,5 @@
 """
-Recursive Least Squares (RLS) Implementation for ACC Parameter Estimation
+Recursive Least Squares (RLS) Implementation for ACC Parameter Estimation:
 
 This script implements the Recursive Least Squares algorithm to estimate parameters 
 of an Adaptive Cruise Control (ACC) model. The ACC model is a car-following model
@@ -25,23 +25,13 @@ from functools import partial
 from functions import * 
 import os
 
-# Creates directory:
 # Create plots directory relative to script location
 plot_dir = os.path.join(os.path.dirname(__file__), "..", "plots")
 os.makedirs(plot_dir, exist_ok=True)
 
-
-
-
-"""
-Simulation Parameters and ACC Model Configuration
-
-The simulation uses discrete time steps to model vehicle dynamics.
-Paramters below are based on typical values from vehicle following models.
-"""
 # Paramters from paper:
 time = 900    # Total simulation steps
-dt   = 0.1    # Time step in seconds (10Hz sampling)
+dt   = 0.1    # Time step in seconds
 
 # Seed for Reproducibility:
 np.random.seed(0)
@@ -63,7 +53,7 @@ Where:
     u = velocity of lead vehicle
 """
 # True Parameters for ACC Model:
-theta = [0.08, 0.12, 1.5] # theta[0] = alpha, theta[1] = beta, theta[2] = tau
+true_theta = [0.08, 0.12, 1.5] # theta[0] = alpha, theta[1] = beta, theta[2] = tau
 
 """
 Initial Conditions
@@ -85,7 +75,7 @@ In real-world driving, vehicles cannot change speed instantaneously.
 These constraints limit acceleration/deceleration to realistic values:
 """
 # Maximum acceleration/deceleration constraint (m/s²)
-dv_max = 3.0  # typical value for comfortable driving
+dv_max = 3.0  
 
 """
 Lead Vehicle Trajectory Generation
@@ -160,7 +150,7 @@ for k in range(1, time):
     u_prev = u_t[k-1]
 
     ds = (u_prev - v_prev) * dt
-    dv = (theta[0]*(s_prev - theta[2]*v_prev) + theta[1]*(u_prev - v_prev)) * dt
+    dv = (true_theta[0]*(s_prev - true_theta[2]*v_prev) + true_theta[1]*(u_prev - v_prev)) * dt
 
     s_t[k] = s_prev + ds
     # Apply acceleration/deceleration constraint
@@ -194,22 +184,6 @@ The algorithm consists of:
 """
 gamma_est = np.array([0.9, 0.01, 0.01])  # Some initial guess for [gamma1, gamma2, gamma3]
 
-"""
-RLS Setup and Parameter History Tracking
-
-We initialize:
-   1. Parameter vectors to store history of estimates at each time step
-   2. Covariance matrix P - set to large initial value (1000*I) to allow quick adaptation
-      - A large P indicates high uncertainty in initial parameter estimates
-      - This causes the algorithm to heavily weight new measurements at first
-      - As estimates improve, P decreases and the algorithm becomes more conservative
-
-The mathematical details:
-   - gamma_est: Vector of estimated parameters [gamma1, gamma2, gamma3]
-   - P: 3x3 covariance matrix representing uncertainty in parameter estimates
-   - Y: Measured output (v_t[k])
-   - X: Input vector [v_t[k-1], s_t[k-1], u_t[k-1]]
-"""
 P = np.eye(3)*1000.0 # Initial covariance matrix 
 
 gamma_history = np.zeros((time, 3))
@@ -263,9 +237,9 @@ for k in range(1, time):
 
 
 alpha_est_final, beta_est_final, tau_est_final = theta_history[-1]
-print("Final estimated alpha = %.3f (true=%.3f)" % (alpha_est_final, theta[0]))
-print("Final estimated beta  = %.3f (true=%.3f)"  % (beta_est_final, theta[1]))
-print("Final estimated tau   = %.3f (true=%.3f)"   % (tau_est_final, theta[2]))
+print("Final estimated alpha = %.3f (true=%.3f)" % (alpha_est_final, true_theta[0]))
+print("Final estimated beta  = %.3f (true=%.3f)"  % (beta_est_final, true_theta[1]))
+print("Final estimated tau   = %.3f (true=%.3f)"   % (tau_est_final, true_theta[2]))
 
 
 # Plot - Alpha, Beta, Tau Convergence
@@ -273,7 +247,7 @@ t_axis = np.arange(time)
 fig, axes = plt.subplots(3,1, figsize=(12,10), sharex=True)
 
 params  = ["alpha", "beta", "tau"]
-trueval = [theta[0], theta[1], theta[2]]
+trueval = [true_theta[0], true_theta[1], true_theta[2]]
 colors  = ["r", "g", "b"]
 
 for i, ax in enumerate(axes):
@@ -287,11 +261,9 @@ plt.savefig(os.path.join(plot_dir, "rls_parameter_convergence.png"))
 plt.close()
 
 # Compute MAE and MSE
-errors = np.abs(theta_history - np.array([theta[0], theta[1], theta[2]]))
-
+errors = np.abs(theta_history - np.array([true_theta[0], true_theta[1], true_theta[2]]))
 mae = np.mean(errors, axis=1)  # mean absolute error at each time step
 mse = np.mean(errors**2, axis=1)  # mean squared error at each time step
-
 
 """
 This portion of the code will proceed to produce the plots for:
@@ -325,10 +297,7 @@ plt.title("Convergence of RLS Parameter Estimates")
 plt.legend()
 plt.savefig(os.path.join(plot_dir, "rls_error_convergence.png"))
 plt.close()
-"""
-Plot - Plots lead vehicle velocity (u_t), following vehicle velocity (v_t),
-       and space gap (s_t) over time.
-"""
+
 # Plot 3: All three plots in one figure:
 plt.figure(figsize=(12,5))
 plt.plot(u_t, label="Lead Vel (u)", linestyle="--", color="g")
