@@ -11,8 +11,9 @@ The model uses three parameters:
     - beta: Sensitivity to velocity difference
     - tau: Desired time headway
 
-The script performs the following steps:
+The script performs the following:
     1. Generate synthetic data using known parameters
+        1.5. Simulates scenario 1, 2, 3, and 4
     2. Implement RLS to estimate parameters from simulated data
     3. Compare estimated parameters with true values
     4. Generate plots to visualize convergence and model behavior
@@ -21,7 +22,6 @@ The script performs the following steps:
 # Needed dependencies:
 import numpy as np
 import matplotlib.pyplot as plt
-from functools import partial
 from functions import * 
 import os
 
@@ -31,13 +31,13 @@ os.makedirs(plot_dir, exist_ok=True)
 
 # Paramters from paper:
 time = 900    # Total simulation steps
-dt   = 0.1    # Time step in seconds
+dt = 0.1    # Time step in seconds
 
 # Seed for Reproducibility:
 np.random.seed(0)
 
 """
-ACC Model Parameters
+ACC Model Parameters:
 
 The ACC model is defined by three parameters:
     - alpha: Sensitivity to space gap (controls how strongly the vehicle responds to deviations in spacing)
@@ -94,24 +94,40 @@ Two different approaches are available:
    - Acceleration exiting the curve (340-360 time steps)
    - Random small variations elsewhere
 
+3. Suburban Driving Simulation:
+    - This scenario simulates a suburvan driving environment with two vehicles
+    - Lead vehicle u_t and v_t are generated with a stop zone
+    - This simulation will simulate how RLS reacts in a suburban environment with 
+      stop zones, random pedestrians, other vehicles, and different variations.
+
+4. Aggresive Driving Simulation:
+    - This scenario simulates a more aggressive driving behavior
+    - The lead vehicle u_t and v_t are generated with larger random variations, in this simulation 
+      u_t is driving aggressilvely and the following vehicle v_t is trying to catch up in the environment 
+      with the aggresiveness of u_t
+    - This simulation will simulate and test the robustness of RLS in a more aggressive driving environment
+
 The velocity is preallocated as an array with dimension (time).
 """ 
-u_t = np.zeros(time)
+
+u_t = np.zeros(time) # preallocate array for u_t
 u_t[0] = u0
 
-# Key to decide which scenario to use:
+# Key determines which scenario to use:
 # Change this key to switch between scenarios
 # 1 = Random Walk Model
 # 2 = Curve Simulation 
 # 3 = Suburban Driving Simulation
 # 4 - Aggresive Driving Simulation
-scenario_key = 1
+scenario_key = int(input("Enter scenario key (1-4): "))
 
 if scenario_key == 1:
+    # Random Walk Simulation:
     for i in range(1, 900):
         u_t[i] = u_t[i-1] + np.random.normal(loc=0, scale=0.2) # random increments
+
 elif scenario_key == 2:
-    # Simulated Curve:
+    # Road Curve Simulation:
     for i in range(1, 900):
         if 300 <= i < 340:
             u_t[i] = u_t[i-1] - 2.0  # sudden deceleration entering curve
@@ -121,12 +137,48 @@ elif scenario_key == 2:
             u_t[i] = u_t[i-1] + np.random.normal(0, 0.2)
         # Safety: keep velocity in physical range
         u_t[i] = np.clip(u_t[i], 0, 35)
+
 elif scenario_key == 3:
+    # Suburbs Driving Simulation:
+    vehicle_cruise  = 11.176      # target speed (m/s)
+    accel_step      = 1.0        # m/s gained per timestep when accelerating
+    decel_step      = -2.0       # m/s lost per timestep when braking
+    stop_duration   = 3          # timesteps to stay stopped at a stop sign
+
+    # generate event‐indices (avoid too close to start/end)
+    stop_signs    = np.random.choice(range(50, time-50), size=3, replace=False)
+    pedestrians   = np.random.choice(range(50, time-50), size=5, replace=False)
+    random_brakes = np.random.choice(range(50, time-50), size=7, replace=False)
+
+    stop_timer = 0
     for i in range(1, time):
-        if i % 100 < 20:
-            u_t[i] = max(u_t[i - 1] - 3.0, 0)  # Stop zone
+        u_prev = u_t[i-1]
+
+        if stop_timer > 0:
+            # currently stopped at a stop sign
+            u_t[i] = 0.0
+            stop_timer -= 1
+
+        elif i in stop_signs:
+            # hit a stop sign → brake then start stop_timer
+            u_t[i] = max(0.0, u_prev + decel_step)
+            stop_timer = stop_duration - 1
+
+        elif i in pedestrians:
+            # pedestrian crossing: one‐step hard brake
+            u_t[i] = max(0.0, u_prev + decel_step)
+
+        elif i in random_brakes:
+            # mild random brake (other car slows)
+            u_t[i] = max(0.0, u_prev + decel_step * 0.5)
+
         else:
-            u_t[i] = min(u_t[i - 1] + 0.5, 30) + np.random.normal(0, 0.2)
+            # normal acceleration up to cruise
+            u_t[i] = min(vehicle_cruise, u_prev + accel_step)
+
+    # ensure no “overshoot” of cruise speed
+    u_t = np.clip(u_t, 0.0, vehicle_cruise)
+
 
 elif scenario_key == 4: # Scenario 4 implicitly
     for i in range(1, time):
@@ -261,6 +313,10 @@ alpha_est_final, beta_est_final, tau_est_final = theta_history[-1]
 print("Final estimated alpha = %.3f (true=%.3f)" % (alpha_est_final, true_theta[0]))
 print("Final estimated beta  = %.3f (true=%.3f)"  % (beta_est_final, true_theta[1]))
 print("Final estimated tau   = %.3f (true=%.3f)"   % (tau_est_final, true_theta[2]))
+print("-------------------------")
+print(f"Alpha Error: {true_theta[0] - alpha_est_final:.3f}")
+print(f"Beta Error: {true_theta[1] - beta_est_final:.3f}")
+print(f"Tau Error: {true_theta[2] - tau_est_final:.3f}")
 
 
 # Plot - Alpha, Beta, Tau Convergence
