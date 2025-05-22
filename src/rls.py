@@ -78,42 +78,63 @@ These constraints limit acceleration/deceleration to realistic values:
 dv_max = 3.0  
 
 """
-Lead Vehicle Trajectory Generation
+Lead Vehicle Trajectory Generation:
 
 This section generates the velocity profile for the lead vehicle (u_t).
 Two different approaches are available:
 
-1. Curve Simulation (currently commented out):
+1. Random Walk Model (currently used):
+   - Adds small random increments to velocity at each time step
+   - Creates more unpredictable but still realistic velocity changes
+   - Uses normal distribution with mean=0, std=0.2 m/s
+
+2. Curve Simulation (currently commented out):
    - Simulates a vehicle navigating a road curve
    - Sharp deceleration entering the curve (300-340 time steps)
    - Acceleration exiting the curve (340-360 time steps)
    - Random small variations elsewhere
-
-2. Random Walk Model (currently used):
-   - Adds small random increments to velocity at each time step
-   - Creates more unpredictable but still realistic velocity changes
-   - Uses normal distribution with mean=0, std=0.2 m/s
 
 The velocity is preallocated as an array with dimension (time).
 """ 
 u_t = np.zeros(time)
 u_t[0] = u0
 
-for k in range(1, time):
-    """
-    # Simuulate a Curve: 
-    if 300 <= k < 340:
-        u_t[k] = u_t[k-1] - 2.0  # sudden deceleration entering curve
-    elif 340 <= k < 360:
-        u_t[k] = u_t[k-1] + 1.0  # acceleration exiting curve
-    else:
-        u_t[k] = u_t[k-1] + np.random.normal(0, 0.2)
+# Key to decide which scenario to use:
+# Change this key to switch between scenarios
+# 1 = Random Walk Model
+# 2 = Curve Simulation 
+# 3 = Suburban Driving Simulation
+# 4 - Aggresive Driving Simulation
+scenario_key = 1
 
-    # Safety: keep velocity in physical range
-    u_t[k] = np.clip(u_t[k], 0, 35)
-    """
-    # small random increments
-    u_t[k] = u_t[k-1] + np.random.normal(loc=0, scale=0.2)
+if scenario_key == 1:
+    for i in range(1, 900):
+        u_t[i] = u_t[i-1] + np.random.normal(loc=0, scale=0.2) # random increments
+elif scenario_key == 2:
+    # Simulated Curve:
+    for i in range(1, 900):
+        if 300 <= i < 340:
+            u_t[i] = u_t[i-1] - 2.0  # sudden deceleration entering curve
+        elif 340 <= i < 360:
+            u_t[i] = u_t[i-1] + 1.0  # acceleration exiting curve
+        else:
+            u_t[i] = u_t[i-1] + np.random.normal(0, 0.2)
+        # Safety: keep velocity in physical range
+        u_t[i] = np.clip(u_t[i], 0, 35)
+elif scenario_key == 3:
+    for i in range(1, time):
+        if i % 100 < 20:
+            u_t[i] = max(u_t[i - 1] - 3.0, 0)  # Stop zone
+        else:
+            u_t[i] = min(u_t[i - 1] + 0.5, 30) + np.random.normal(0, 0.2)
+
+elif scenario_key == 4: # Scenario 4 implicitly
+    for i in range(1, time):
+        u_t[i] = u_t[i - 1] + np.random.normal(0, 1.0)  # Aggressive, erratic driving
+        u_t[i] = np.clip(u_t[i], 0, 40)
+
+else:
+    raise ValueError("Invalid scenario_key. Must be 1-4.")
 
 """
 Following Vehicle Trajectory Generation
