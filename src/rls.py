@@ -183,34 +183,28 @@ elif scenario_key == 3:
    for i in range(1, time):
        u_prev = u_t[i-1]
 
-
        if stop_timer > 0:
            # currently stopped at a stop sign
            u_t[i] = 0.0
            stop_timer -= 1
-
 
        elif i in stop_signs:
            # hit a stop sign → brake then start stop_timer
            u_t[i] = max(0.0, u_prev + decel_step)
            stop_timer = stop_duration - 1
 
-
        elif i in pedestrians:
            # pedestrian crossing: one‐step hard brake
            u_t[i] = max(0.0, u_prev + decel_step)
-
 
        elif i in random_brakes:
            # mild random brake (other car slows)
            u_t[i] = max(0.0, u_prev + decel_step * 0.5)
 
-
        else:
            # normal acceleration up to cruise
            u_t[i] = min(vehicle_cruise, u_prev + accel_step)
-
-
+           
    # ensure no “overshoot” of cruise speed
    u_t = np.clip(u_t, 0.0, vehicle_cruise)
 
