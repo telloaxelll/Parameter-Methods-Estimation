@@ -1,18 +1,15 @@
 """
 Recursive Least Squares (RLS) Implementation for ACC Parameter Estimation:
 
-
 This script implements the Recursive Least Squares algorithm to estimate parameters
 of an Adaptive Cruise Control (ACC) model. The ACC model is a car-following model
 that describes how a following vehicle adjusts its velocity based on the lead vehicle
 and the space gap between them.
 
-
 The model uses three parameters:
    - alpha: Sensitivity to space gap
    - beta: Sensitivity to velocity difference
    - tau: Desired time headway
-
 
 The script performs the following:
    1. Generate synthetic data using known parameters
@@ -22,41 +19,33 @@ The script performs the following:
    4. Generate plots to visualize convergence and model behavior
 """
 
-
 # Needed dependencies:
 import numpy as np
 import matplotlib.pyplot as plt
 from functions import *
 import os
 
-
 # Create plots directory relative to script location
 plot_dir = os.path.join(os.path.dirname(__file__), "..", "plots")
 os.makedirs(plot_dir, exist_ok=True)
-
 
 # Paramters from paper:
 time = 900    # Total simulation steps
 dt = 0.1    # Time step in seconds
 
-
 # Seed for Reproducibility:
 np.random.seed(0)
 
-
 """
 ACC Model Parameters:
-
 
 The ACC model is defined by three parameters:
    - alpha: Sensitivity to space gap (controls how strongly the vehicle responds to deviations in spacing)
    - beta: Sensitivity to velocity difference (controls how strongly the vehicle responds to speed differences)
    - tau: Desired time headway (the target time gap the vehicle tries to maintain)
 
-
 The complete model is described by:
    dv/dt = alpha*(s - tau*v) + beta*(u - v)
-
 
 Where:
    s = space gap between vehicles
@@ -66,10 +55,8 @@ Where:
 # True Parameters for ACC Model:
 true_theta = [0.08, 0.12, 1.5] # theta[0] = alpha, theta[1] = beta, theta[2] = tau
 
-
 """
-Initial Conditions
-
+Initial Conditions:
 
 These values set the starting state of the simulation:
    - s0: Initial space gap between vehicles (meters)
@@ -78,13 +65,11 @@ These values set the starting state of the simulation:
 """
 # Initial Conditions for ACC Model:
 s0 = 60.0 # SI: m
-v0 = 33.0 # SI: m/s (approximately 119 km/h)
-u0 = 31.0 # SI: m/s (approximately 112 km/h)
-
+u0 = 34.0 # SI: m/s ~ 76.05 mi/hr
+v0 = 31.0 # SI: m/s ~ 69.34 mi/hr
 
 """
-Physical Constraints
-
+Physical Constraints:
 
 In real-world driving, vehicles cannot change speed instantaneously.
 These constraints limit acceleration/deceleration to realistic values:
@@ -92,34 +77,28 @@ These constraints limit acceleration/deceleration to realistic values:
 # Maximum acceleration/deceleration constraint (m/s²)
 dv_max = 3.0 
 
-
 """
 Lead Vehicle Trajectory Generation:
-
 
 This section generates the velocity profile for the lead vehicle (u_t).
 Two different approaches are available:
 
-
-1. Random Walk Model (currently used):
+1. Random Walk Model:
   - Adds small random increments to velocity at each time step
   - Creates more unpredictable but still realistic velocity changes
   - Uses normal distribution with mean=0, std=0.2 m/s
 
-
-2. Curve Simulation (currently commented out):
+2. Curve Simulation:
   - Simulates a vehicle navigating a road curve
   - Sharp deceleration entering the curve (300-340 time steps)
   - Acceleration exiting the curve (340-360 time steps)
   - Random small variations elsewhere
 
-
-3. Suburban Driving Simulation:
+3. Suburbs Driving Simulation:
    - This scenario simulates a suburvan driving environment with two vehicles
    - Lead vehicle u_t and v_t are generated with a stop zone
    - This simulation will simulate how RLS reacts in a suburban environment with
      stop zones, random pedestrians, other vehicles, and different variations.
-
 
 4. Aggresive Driving Simulation:
    - This scenario simulates a more aggressive driving behavior
@@ -128,14 +107,11 @@ Two different approaches are available:
      with the aggresiveness of u_t
    - This simulation will simulate and test the robustness of RLS in a more aggressive driving environment
 
-
 The velocity is preallocated as an array with dimension (time).
 """
 
-
 u_t = np.zeros(time) # preallocate array for u_t
 u_t[0] = u0
-
 
 # Key determines which scenario to use:
 # Change this key to switch between scenarios
@@ -143,13 +119,15 @@ u_t[0] = u0
 # 2 = Curve Simulation
 # 3 = Suburban Driving Simulation
 # 4 - Aggresive Driving Simulation
-scenario_key = int(input("Enter scenario key (1-4): "))
-
+scenario_key = int(input("Enter scenario key (1-4):"))
 
 if scenario_key == 1:
    # Random Walk Simulation:
-   for i in range(1, 900):
-       u_t[i] = u_t[i-1] + np.random.normal(loc=0, scale=0.2) # random increments
+   for i in range(1, time):
+    # Cruise towards target with jitter
+    accel = 0.05 * (30 - u_t[i-1])  # slow correction
+    noise  = np.random.normal(0, 0.3)         # road jitter
+    u_t[i] = np.clip(u_t[i-1] + accel + noise, 0, 35)
 
 
 elif scenario_key == 2:
@@ -164,7 +142,6 @@ elif scenario_key == 2:
        # Safety: keep velocity in physical range
        u_t[i] = np.clip(u_t[i], 0, 35)
 
-
 elif scenario_key == 3:
    # Suburbs Driving Simulation:
    vehicle_cruise  = 11.176      # target speed (m/s)
@@ -172,12 +149,10 @@ elif scenario_key == 3:
    decel_step      = -2.0       # m/s lost per timestep when braking
    stop_duration   = 3          # timesteps to stay stopped at a stop sign
 
-
    # generate event‐indices (avoid too close to start/end)
    stop_signs    = np.random.choice(range(50, time-50), size=3, replace=False)
    pedestrians   = np.random.choice(range(50, time-50), size=5, replace=False)
    random_brakes = np.random.choice(range(50, time-50), size=7, replace=False)
-
 
    stop_timer = 0
    for i in range(1, time):
@@ -208,31 +183,23 @@ elif scenario_key == 3:
    # ensure no “overshoot” of cruise speed
    u_t = np.clip(u_t, 0.0, vehicle_cruise)
 
-
-
-
 elif scenario_key == 4: # Scenario 4 implicitly
    for i in range(1, time):
        u_t[i] = u_t[i - 1] + np.random.normal(0, 1.0)  # Aggressive, erratic driving
        u_t[i] = np.clip(u_t[i], 0, 40)
 
-
 else:
    raise ValueError("Invalid scenario_key. Must be 1-4.")
-
 
 """
 Following Vehicle Trajectory Generation
 
-
 This section simulates the behavior of the following vehicle according to the ACC model.
 For each time step, we:
-
 
 1. Calculate the change in space gap (ds):
   ds = (u_prev - v_prev) * dt
   Where u_prev and v_prev are velocities of lead and following vehicles at previous step
-
 
 2. Calculate the change in velocity (dv) using the ACC model equation:
   dv = (alpha*(s_prev - tau*v_prev) + beta*(u_prev - v_prev)) * dt
@@ -240,10 +207,8 @@ For each time step, we:
     a. Deviation from desired space gap (s_prev - tau*v_prev)
     b. Velocity difference with the lead vehicle (u_prev - v_prev)
 
-
 3. Apply physical constraints to velocity changes
   - Limits acceleration/deceleration to realistic values (dv_max)
-
 
 The results are stored in arrays s_t (space gap) and v_t (following vehicle velocity).
 """
@@ -251,10 +216,8 @@ The results are stored in arrays s_t (space gap) and v_t (following vehicle velo
 s_t = np.zeros(time)
 v_t = np.zeros(time)
 
-
 s_t[0] = s0
 v_t[0] = v0
-
 
 # Generate sample data;
 for k in range(1, time):
@@ -262,17 +225,13 @@ for k in range(1, time):
    v_prev = v_t[k-1]
    u_prev = u_t[k-1]
 
-
    ds = (u_prev - v_prev) * dt
    dv = (true_theta[0]*(s_prev - true_theta[2]*v_prev) + true_theta[1]*(u_prev - v_prev)) * dt
 
-
    s_t[k] = s_prev + ds
+
    # Apply acceleration/deceleration constraint
-   v_t[k] = v_prev + np.clip(dv, -dv_max * dt, dv_max * dt)
-
-
-
+   v_t[k] = max(0.0, v_prev + np.clip(dv, -dv_max * dt, dv_max * dt))
 
 """
 Recursive Least Squares (RLS) Implementation
@@ -380,19 +339,15 @@ print("-------------------------")
 print(f"Alpha Error: {true_theta[0] - alpha_est_final:.3f}")
 print(f"Beta Error: {true_theta[1] - beta_est_final:.3f}")
 print(f"Tau Error: {true_theta[2] - tau_est_final:.3f}")
-
-
-
+print("-------------------------")
 
 # Plot - Alpha, Beta, Tau Convergence
 t_axis = np.arange(time)
 fig, axes = plt.subplots(3,1, figsize=(12,10), sharex=True)
 
-
 params  = ["alpha", "beta", "tau"]
 trueval = [true_theta[0], true_theta[1], true_theta[2]]
 colors  = ["r", "g", "b"]
-
 
 for i, ax in enumerate(axes):
    ax.plot(t_axis, theta_history[:, i], label=f"Estimated {params[i]}", color=colors[i])
@@ -404,12 +359,10 @@ plt.suptitle("RLS Parameter Convergence")
 plt.savefig(os.path.join(plot_dir, "rls_parameter_convergence.png"))
 plt.close()
 
-
 # Compute MAE and MSE
 errors = np.abs(theta_history - np.array([true_theta[0], true_theta[1], true_theta[2]]))
 mae = np.mean(errors, axis=1)  # mean absolute error at each time step
 mse = np.mean(errors**2, axis=1)  # mean squared error at each time step
-
 
 """
 This portion of the code will proceed to produce the plots for:
@@ -419,7 +372,6 @@ This portion of the code will proceed to produce the plots for:
    4. Velocities (lead and following) in one plot
    5. Space gap in one plot.
 """
-
 
 # Plot 1: Plot MAE and MSE over time
 plt.figure(figsize=(10,4))
@@ -433,7 +385,6 @@ plt.legend()
 plt.savefig(os.path.join(plot_dir, "rls_MAE_MSE.png"))
 plt.close()
 
-
 # Plot 2: Absolute Error in alpha, beta, tau
 plt.figure(figsize=(10,4))
 for i, param in enumerate(params):
@@ -445,7 +396,6 @@ plt.title("Convergence of RLS Parameter Estimates")
 plt.legend()
 plt.savefig(os.path.join(plot_dir, "rls_error_convergence.png"))
 plt.close()
-
 
 # Plot 3: All three plots in one figure:
 plt.figure(figsize=(12,5))
@@ -460,7 +410,6 @@ plt.legend()
 plt.savefig(os.path.join(plot_dir, "ACC_model_data.png"))
 plt.close()
 
-
 # Plot 4: Velocities (Lead and Following)
 plt.figure(figsize=(12,5))
 plt.plot(u_t, label="Lead Vehicle Velocity (u_t)", linestyle="--", color="green")
@@ -472,7 +421,6 @@ plt.grid()
 plt.legend()
 plt.savefig(os.path.join(plot_dir, "lead_following_velocity.png"))
 plt.close()
-
 
 # Plot 5: Space Gap
 plt.figure(figsize=(12,5))
