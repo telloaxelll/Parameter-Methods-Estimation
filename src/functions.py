@@ -3,6 +3,9 @@ import numpy as np
 import matplotlib.pyplot as plt
 import os
 
+plot_dir = os.path.join(os.path.dirname(__file__), "plots")
+os.makedirs(plot_dir, exist_ok=True)
+
 """
 This functions.py file will host all of the necessary functions to execute 
 functions of the Recursive Least Squares. 
@@ -43,7 +46,7 @@ def rls_filter(u_t, v_t, s_t, time, dt, true_theta):
     - Update covariance matrix
     """
     gamma_est = np.array([0.9, 0.01, 0.01])  # some initial guess
-    P = np.eye(3)*1000.0 # covariance matrix 
+    P = np.eye(3) * 1000.0 # covariance matrix 
 
     gamma_history = np.zeros((time, 3))
     theta_history = np.zeros((time, 3))  # [alpha, beta, tau] at each step - 3 x 900 matrix storing all values of theta
@@ -95,5 +98,5 @@ def rls_filter(u_t, v_t, s_t, time, dt, true_theta):
 
     axes[-1].set_xlabel("Time step (k)")
     plt.suptitle("RLS Parameter Convergence")
-    plt.show()
+    plt.savefig(os.path.join(plot_dir,"Convergence_Paramters.png"))
     plt.close()

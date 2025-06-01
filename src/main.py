@@ -1,11 +1,11 @@
 # Import Needed Dependencies: 
 import numpy as np
 import matplotlib.pyplot as plt
-from vehicles import scenario_1_data 
+from vehicles import scenario_1_data, scenario_2_data
 import os
 
-# Creates Directory for Plots: 
-os.makedirs("plots", exist_ok=True)
+# Creates Directory for Plots:
+plot_dir = os.path.join(os.path.dirname(__file__), "plots")
 
 # Start of Script:
 np.random.seed(0)
@@ -28,3 +28,8 @@ Case 1: Random Walk
 """
 scenario_1_data("NON-EQ", u_0, v_0, s_0, time, dv_max, dt, true_theta)
 scenario_1_data("EQ", u_0, v_0, s_0, time, dv_max, dt, true_theta)
+
+"""
+Case 2: Road Curvature
+"""
+scenario_2_data(u_0, v_0, s_0, time, dv_max, dt, true_theta)
