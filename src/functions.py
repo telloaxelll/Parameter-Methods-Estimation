@@ -73,6 +73,7 @@ def rls_filter(u_t, v_t, s_t, time, dt, true_theta):
         theta_history[k] = invert_gamma(gamma_est, dt)
 
     # Print Results
+    print("-------------------------")
     alpha_est_final, beta_est_final, tau_est_final = theta_history[-1]
     print("Final estimated alpha = %.3f (true=%.3f)" % (alpha_est_final, true_theta[0]))
     print("Final estimated beta  = %.3f (true=%.3f)"  % (beta_est_final, true_theta[1]))
@@ -80,7 +81,7 @@ def rls_filter(u_t, v_t, s_t, time, dt, true_theta):
     print("-------------------------")
     print(f"Alpha Error: {true_theta[0] - alpha_est_final:.3f}")
     print(f"Beta Error: {true_theta[1] - beta_est_final:.3f}")
-    print(f"Tau Error: {true_theta[2] - tau_est_final:.3f}")
+    print(f"Tau Error: {true_theta[2] - tau_est_final:.3f}\n")
 
     # Plot - Alpha, Beta, Tau Convergence
     t_axis = np.arange(time)
@@ -100,3 +101,4 @@ def rls_filter(u_t, v_t, s_t, time, dt, true_theta):
     plt.suptitle("RLS Parameter Convergence")
     plt.savefig(os.path.join(plot_dir,"Convergence_Paramters.png"))
     plt.close()
+

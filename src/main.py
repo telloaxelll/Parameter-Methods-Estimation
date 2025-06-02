@@ -1,7 +1,7 @@
 # Import Needed Dependencies: 
 import numpy as np
 import matplotlib.pyplot as plt
-from vehicles import scenario_1_data, scenario_2_data
+from vehicles import scenario_1_data, scenario_2_data, scenario_3_data, scenario_4_data
 import os
 
 # Creates Directory for Plots:
@@ -23,13 +23,26 @@ true_theta = np.array([0.08, 0.12, 1.5])
 
 dv_max = 3.0 # maximum acceleration/deceleration (3 m/s^2)
 
-"""'
-Case 1: Random Walk 
-"""
-scenario_1_data("NON-EQ", u_0, v_0, s_0, time, dv_max, dt, true_theta)
-scenario_1_data("EQ", u_0, v_0, s_0, time, dv_max, dt, true_theta)
+if __name__ == "__main__":
 
-"""
-Case 2: Road Curvature
-"""
-scenario_2_data(u_0, v_0, s_0, time, dv_max, dt, true_theta)
+    """'
+    Case 1: Random Walk 
+    """
+    scenario_1_data("NON-EQ", u_0, v_0, s_0, time, dv_max, dt, true_theta)
+    scenario_1_data("EQ", u_0, v_0, s_0, time, dv_max, dt, true_theta)
+
+    """
+    Case 2: Road Curvature
+    """
+    scenario_2_data(u_0, v_0, s_0, time, dv_max, dt, true_theta)
+
+    """
+    Case 3: Suburban Environment
+    """
+    scenario_3_data(u_0, v_0, s_0, time, dv_max, dt, true_theta)
+
+    """
+    Case 4: Aggresive Lead Vehicle
+    """    
+    scenario_4_data(u_0, v_0, s_0, time, dv_max, dt, true_theta)
+
