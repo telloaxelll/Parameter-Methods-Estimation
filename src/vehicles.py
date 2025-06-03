@@ -7,7 +7,7 @@ import os
 plot_dir = os.path.join(os.path.dirname(__file__), "plots")
 
 # Case 1: Random Walk Scenario
-def scenario_1_data(scenario, u_0, v_0, s_0, time, dv_max, dt, true_theta):
+def scenario_1_data(scenario, u_0, v_0, s_0, time, dv_max, dt, true_theta, label):
     if scenario == "NON-EQ":
         # Allocate Arrays for u_t, v_t, and s_t:
         u_t = np.zeros(time)
@@ -39,8 +39,8 @@ def scenario_1_data(scenario, u_0, v_0, s_0, time, dv_max, dt, true_theta):
             s_t[i] = s_prev + (u_prev - v_prev) * dt 
 
         #final_data = [u_t, v_t, s_t]
-        rls_filter(u_t, v_t, s_t, time, dt, true_theta)
-        
+        rls_filter(u_t, v_t, s_t, time, dt, true_theta, scenario=label or "Scenario 1")
+
         # Plot Velocities:
         plt.figure(figsize=(12, 5))
         plt.plot(u_t, label="u(t) - Lead Vehicle", color="red")
@@ -94,7 +94,7 @@ def scenario_1_data(scenario, u_0, v_0, s_0, time, dv_max, dt, true_theta):
             s_t[i] = s_prev + (u_prev - v_prev) * dt
 
         #final_data = [u_t, v_t, s_t]
-        rls_filter(u_t, v_t, s_t, time, dt, true_theta)
+        rls_filter(u_t, v_t, s_t, time, dt, true_theta, scenario=label or "Scenario 1")
         
         # Plot velocities
         plt.figure(figsize=(12, 5))
@@ -164,7 +164,7 @@ def scenario_2_data(u_0, v_0, s_0, time, dv_max, dt, true_theta):
         v_t[i] = v_prev + acc * dt
         s_t[i] = s_prev + (u_prev - v_prev) * dt
 
-    rls_filter(u_t, v_t, s_t, time, dt, true_theta)
+    rls_filter(u_t, v_t, s_t, time, dt, true_theta, scenario="Random Walk: Non-Equilibrium")
 
     # Plot Velocities:
     plt.figure(figsize=(12, 5))
@@ -247,7 +247,7 @@ def scenario_3_data(u_0, v_0, s_0, time, dv_max, dt, true_theta):
         s_t[i] = s_prev + (u_prev - v_prev) * dt
 
     
-    rls_filter(u_t, v_t, s_t, time, dt, true_theta)
+    rls_filter(u_t, v_t, s_t, time, dt, true_theta, scenario="Random Walk: Non-Equilibrium")
 
     # Plot Velocities:
     plt.figure(figsize=(12, 5))
@@ -322,9 +322,9 @@ def scenario_4_data(u_0, v_0, s_0, time, dv_max, dt, true_theta):
         s_t[i] = s_prev + (u_prev - v_prev) * dt
 
     from functions import rls_filter
-    rls_filter(u_t, v_t, s_t, time, dt, true_theta)
+    rls_filter(u_t, v_t, s_t, time, dt, true_theta, scenario="Random Walk: Non-Equilibrium")
 
-    # Plots
+    # Plots Velocities: 
     plt.figure(figsize=(12, 5))
     plt.plot(u_t, label="u(t) - Lead Vehicle", color="red")
     plt.plot(v_t, label="v(t) - Follower", color="blue")
@@ -337,6 +337,7 @@ def scenario_4_data(u_0, v_0, s_0, time, dv_max, dt, true_theta):
     plt.savefig(os.path.join(plot_dir, "4_Velocities_Aggressive.png"))
     plt.close()
 
+    # Plots Space Gap: 
     plt.figure(figsize=(12, 5))
     plt.plot(s_t, label="s(t) - Space Gap", color="black")
     plt.title("Space Gap | Scenario 4: Aggressive Driving")
