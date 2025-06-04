@@ -29,7 +29,7 @@ if __name__ == "__main__":
     Case 1: Random Walk 
     """
     print("----------Case 1: Random Walk----------")
-    scenario_1_data("NON-EQ", u_0, v_0, s_0, time, dv_max, dt, true_theta, label="Random Walk | Non-Equilibrium:")
+    scenario_1_data("NON-EQ", u_0, v_0, s_0, time, dv_max, dt, true_theta, label="Random Walk | Non-Equilibrium")
     scenario_1_data("EQ", u_0, v_0, s_0, time, dv_max, dt, true_theta, label="Random Walk | Equilibrium")
 
     """
