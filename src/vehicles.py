@@ -63,7 +63,7 @@ def scenario_1_data(scenario, u_0, v_0, s_0, time, dv_max, dt, true_theta, label
         plt.legend()
         plt.grid(True)
         plt.tight_layout()
-        plt.savefig(os.path.join(plot_dir, "1_Space_Gap_Equilibrium.png"))
+        plt.savefig(os.path.join(plot_dir, "1_Space_Gap_Non_Equilibrium.png"))
         plt.close()
 
 
@@ -164,7 +164,7 @@ def scenario_2_data(u_0, v_0, s_0, time, dv_max, dt, true_theta):
         v_t[i] = v_prev + acc * dt
         s_t[i] = s_prev + (u_prev - v_prev) * dt
 
-    rls_filter(u_t, v_t, s_t, time, dt, true_theta, scenario="Random Walk: Non-Equilibrium")
+    rls_filter(u_t, v_t, s_t, time, dt, true_theta, scenario="Scenario 2: Curved Road")
 
     # Plot Velocities:
     plt.figure(figsize=(12, 5))
@@ -247,7 +247,7 @@ def scenario_3_data(u_0, v_0, s_0, time, dv_max, dt, true_theta):
         s_t[i] = s_prev + (u_prev - v_prev) * dt
 
     
-    rls_filter(u_t, v_t, s_t, time, dt, true_theta, scenario="Random Walk: Non-Equilibrium")
+    rls_filter(u_t, v_t, s_t, time, dt, true_theta, scenario="Scenario 3: Suburban Environment")
 
     # Plot Velocities:
     plt.figure(figsize=(12, 5))
