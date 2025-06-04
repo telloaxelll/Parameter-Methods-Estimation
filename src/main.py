@@ -29,24 +29,24 @@ if __name__ == "__main__":
     Case 1: Random Walk 
     """
     print("----------Case 1: Random Walk----------")
-    scenario_1_data("NON-EQ", u_0, v_0, s_0, time, dv_max, dt, true_theta, label="Random Walk:")
-    scenario_1_data("EQ", u_0, v_0, s_0, time, dv_max, dt, true_theta, label="Random Walk:")
+    scenario_1_data("NON-EQ", u_0, v_0, s_0, time, dv_max, dt, true_theta, label="Random Walk | Non-Equilibrium:")
+    scenario_1_data("EQ", u_0, v_0, s_0, time, dv_max, dt, true_theta, label="Random Walk | Equilibrium")
 
     """
     Case 2: Road Curvature
     """
-    #print("----------Case 2: Induced Road Curvature----------")
-    #scenario_2_data(u_0, v_0, s_0, time, dv_max, dt, true_theta, scenario="Induced Road Curvature:")
+    print("----------Case 2: Induced Road Curvature----------")
+    scenario_2_data(u_0, v_0, s_0, time, dv_max, dt, true_theta)
 
     """
     Case 3: Suburban Environment
     """
-    #print("----------Case 3: Suburban Environment----------")
-    #scenario_3_data(u_0, v_0, s_0, time, dv_max, dt, true_theta, scenario="Suburbs Environment:")
+    print("----------Case 3: Suburban Environment----------")
+    scenario_3_data(u_0, v_0, s_0, time, dv_max, dt, true_theta)
 
     """
     Case 4: Aggresive Lead Vehicle
     """    
-    #print("----------Case 4: Aggressive Behavior----------")
-    #scenario_4_data(u_0, v_0, s_0, time, dv_max, dt, true_theta, scenario="Aggresive Lead Behavior:")
+    print("----------Case 4: Aggressive Behavior----------")
+    scenario_4_data(u_0, v_0, s_0, time, dv_max, dt, true_theta)
 

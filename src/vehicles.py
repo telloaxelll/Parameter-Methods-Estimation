@@ -207,7 +207,7 @@ def scenario_3_data(u_0, v_0, s_0, time, dv_max, dt, true_theta):
     accel_rate = 1.5
     stop_duration = 3
 
-    np.random.seed(0)
+    np.random.seed(42)
 
     stop_signs = np.random.choice(range(100, time - 100), size=3, replace=False)
     pedestrian_zones = np.random.choice(range(100, time - 100), size=2, replace=False)
@@ -322,7 +322,7 @@ def scenario_4_data(u_0, v_0, s_0, time, dv_max, dt, true_theta):
         s_t[i] = s_prev + (u_prev - v_prev) * dt
 
     from functions import rls_filter
-    rls_filter(u_t, v_t, s_t, time, dt, true_theta, scenario="Random Walk: Non-Equilibrium")
+    rls_filter(u_t, v_t, s_t, time, dt, true_theta, scenario="Aggresive Lead Driver")
 
     # Plots Velocities: 
     plt.figure(figsize=(12, 5))
