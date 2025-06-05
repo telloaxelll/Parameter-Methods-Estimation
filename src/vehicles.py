@@ -7,8 +7,8 @@ import os
 plot_dir = os.path.join(os.path.dirname(__file__), "plots")
 
 # Case 1: Random Walk Scenario
-def scenario_1_data(scenario, u_0, v_0, s_0, time, dv_max, dt, true_theta, label):
-    if scenario == "NON-EQ":
+def scenario_1_data(case, u_0, v_0, s_0, time, dv_max, dt, true_theta):
+    if case == "NON-EQ":
         # Allocate Arrays for u_t, v_t, and s_t:
         u_t = np.zeros(time)
         v_t = np.zeros(time)
@@ -30,7 +30,7 @@ def scenario_1_data(scenario, u_0, v_0, s_0, time, dv_max, dt, true_theta, label
             v_prev = v_t[i - 1]
             u_prev = u_t[i - 1]
 
-            # CTH-RV Update (Following Vehicle):
+            # CTH-RV Update (Following Vehicle) - v(t):
             acc = true_theta[0] * (s_prev - true_theta[2] * v_prev)  + true_theta[1] * (u_prev - v_prev) 
             acc = np.clip(acc, -dv_max, dv_max)  # apply physical constraint
 
@@ -39,7 +39,7 @@ def scenario_1_data(scenario, u_0, v_0, s_0, time, dv_max, dt, true_theta, label
             s_t[i] = s_prev + (u_prev - v_prev) * dt 
 
         #final_data = [u_t, v_t, s_t]
-        rls_filter(u_t, v_t, s_t, time, dt, true_theta, scenario=label or "Scenario 1")
+        rls_filter(u_t, v_t, s_t, time, dt, true_theta, label="Random-Walk_Non-Equilibrium")
 
         # Plot Velocities:
         plt.figure(figsize=(12, 5))
@@ -63,11 +63,11 @@ def scenario_1_data(scenario, u_0, v_0, s_0, time, dv_max, dt, true_theta, label
         plt.legend()
         plt.grid(True)
         plt.tight_layout()
-        plt.savefig(os.path.join(plot_dir, "1_Space_Gap_Equilibrium.png"))
+        plt.savefig(os.path.join(plot_dir, "1_Space_Gap_Non_Equilibrium.png"))
         plt.close()
 
 
-    elif scenario == "EQ":
+    elif case == "EQ":
         # Allocate Arrays for u_t, v_t, and s_t:
         u_t = np.zeros(time)
         v_t = np.zeros(time)
@@ -94,7 +94,7 @@ def scenario_1_data(scenario, u_0, v_0, s_0, time, dv_max, dt, true_theta, label
             s_t[i] = s_prev + (u_prev - v_prev) * dt
 
         #final_data = [u_t, v_t, s_t]
-        rls_filter(u_t, v_t, s_t, time, dt, true_theta, scenario=label or "Scenario 1")
+        rls_filter(u_t, v_t, s_t, time, dt, true_theta, label="Random-Walk_Equilibrium")
         
         # Plot velocities
         plt.figure(figsize=(12, 5))
@@ -145,9 +145,9 @@ def scenario_2_data(u_0, v_0, s_0, time, dv_max, dt, true_theta):
     v_t[0] = v_0
     s_t[0] = s_0
 
-    center = time // 2         # midpoint of time
-    curve_width = 100          # controls tightness of curve
-    min_speed = 20             # slowest point on the curve (m/s)
+    center = time // 2  # midpoint of time
+    curve_width = 100   # controls tightness of curve
+    min_speed = 20      # slowest point on the curve (m/s)
 
     for i in range(1, time):
         # u_t will be modeled after the "Gaussian dip"
@@ -164,7 +164,7 @@ def scenario_2_data(u_0, v_0, s_0, time, dv_max, dt, true_theta):
         v_t[i] = v_prev + acc * dt
         s_t[i] = s_prev + (u_prev - v_prev) * dt
 
-    rls_filter(u_t, v_t, s_t, time, dt, true_theta, scenario="Random Walk: Non-Equilibrium")
+    rls_filter(u_t, v_t, s_t, time, dt, true_theta, label="Induced-Road-Curvature")
 
     # Plot Velocities:
     plt.figure(figsize=(12, 5))
@@ -247,7 +247,7 @@ def scenario_3_data(u_0, v_0, s_0, time, dv_max, dt, true_theta):
         s_t[i] = s_prev + (u_prev - v_prev) * dt
 
     
-    rls_filter(u_t, v_t, s_t, time, dt, true_theta, scenario="Random Walk: Non-Equilibrium")
+    rls_filter(u_t, v_t, s_t, time, dt, true_theta, label="Suburban-Environment")
 
     # Plot Velocities:
     plt.figure(figsize=(12, 5))
@@ -259,7 +259,7 @@ def scenario_3_data(u_0, v_0, s_0, time, dv_max, dt, true_theta):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig(os.path.join(plot_dir, "3_Velocities_Suburban_Stoplight.png"))
+    plt.savefig(os.path.join(plot_dir, "3_Velocities_Suburban_Environment.png"))
     plt.close()
 
     # Plot Space Gap:
@@ -271,7 +271,7 @@ def scenario_3_data(u_0, v_0, s_0, time, dv_max, dt, true_theta):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig(os.path.join(plot_dir, "3_Space_Gap_Suburban_Stoplight.png"))
+    plt.savefig(os.path.join(plot_dir, "3_Space_Gap_Suburban_Environment.png"))
     plt.close()
 
 # Case 4: Aggressive Lead Driver
@@ -322,7 +322,7 @@ def scenario_4_data(u_0, v_0, s_0, time, dv_max, dt, true_theta):
         s_t[i] = s_prev + (u_prev - v_prev) * dt
 
     from functions import rls_filter
-    rls_filter(u_t, v_t, s_t, time, dt, true_theta, scenario="Aggresive Lead Driver")
+    rls_filter(u_t, v_t, s_t, time, dt, true_theta, label="Aggresive-Lead-Vehicle")
 
     # Plots Velocities: 
     plt.figure(figsize=(12, 5))
@@ -334,7 +334,7 @@ def scenario_4_data(u_0, v_0, s_0, time, dv_max, dt, true_theta):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig(os.path.join(plot_dir, "4_Velocities_Aggressive.png"))
+    plt.savefig(os.path.join(plot_dir, "4_Velocities_Aggressive-Lead_Vehicle.png"))
     plt.close()
 
     # Plots Space Gap: 
@@ -346,5 +346,5 @@ def scenario_4_data(u_0, v_0, s_0, time, dv_max, dt, true_theta):
     plt.legend()
     plt.grid(True)
     plt.tight_layout()
-    plt.savefig(os.path.join(plot_dir, "4_Space_Gap_Aggressive.png"))
+    plt.savefig(os.path.join(plot_dir, "4_Space_Gap_Aggressive-Lead-Vehicle.png"))
     plt.close()

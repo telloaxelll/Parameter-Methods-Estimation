@@ -8,7 +8,7 @@ import os
 plot_dir = os.path.join(os.path.dirname(__file__), "plots")
 
 # Start of Script:
-np.random.seed(0)
+np.random.seed(42)
 
 time = 900 # total number of seconds
 t_axis = np.arange(time)
@@ -29,8 +29,8 @@ if __name__ == "__main__":
     Case 1: Random Walk 
     """
     print("----------Case 1: Random Walk----------")
-    scenario_1_data("NON-EQ", u_0, v_0, s_0, time, dv_max, dt, true_theta, label="Random Walk | Non-Equilibrium:")
-    scenario_1_data("EQ", u_0, v_0, s_0, time, dv_max, dt, true_theta, label="Random Walk | Equilibrium")
+    scenario_1_data("NON-EQ", u_0, v_0, s_0, time, dv_max, dt, true_theta)
+    scenario_1_data("EQ", u_0, v_0, s_0, time, dv_max, dt, true_theta)
 
     """
     Case 2: Road Curvature

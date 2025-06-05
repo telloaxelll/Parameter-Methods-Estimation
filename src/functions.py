@@ -32,7 +32,9 @@ def invert_gamma(gamma, dt):
     return alpha, beta, tau
 
 # RLS Filter Function: 
-def rls_filter(u_t, v_t, s_t, time, dt, true_theta, scenario):
+# note: need to remove scenario paramter from main definition since only scenario 1
+# uses that particular parameter. 
+def rls_filter(u_t, v_t, s_t, time, dt, true_theta, label):
     """
     Given u_t, v_t, s_t, time, and dt:
     - We will set initial guess for theta vector
@@ -74,7 +76,7 @@ def rls_filter(u_t, v_t, s_t, time, dt, true_theta, scenario):
 
     # Print Results
     alpha_est_final, beta_est_final, tau_est_final = theta_history[-1]
-    print(f"\n[SCENARIO: {scenario}]")
+    print(f"\n[SCENARIO: {label}]")
     print("Final estimated alpha = %.3f (true=%.3f)" % (alpha_est_final, true_theta[0]))
     print("Final estimated beta  = %.3f (true=%.3f)"  % (beta_est_final, true_theta[1]))
     print("Final estimated tau   = %.3f (true=%.3f)"   % (tau_est_final, true_theta[2]))
@@ -98,8 +100,8 @@ def rls_filter(u_t, v_t, s_t, time, dt, true_theta, scenario):
         ax.grid()
 
     axes[-1].set_xlabel("Time step (k)")
-    plt.suptitle(f"RLS Parameter Convergence: Scenario {scenario}")
+    plt.suptitle(f"RLS Parameter Convergence: Scenario {label}")
     plt.tight_layout(rect=[0, 0.03, 1, 0.95])
-    filename = f"Convergence_Parameters_Scenario_{scenario}.png"
+    filename = f"Convergence_Parameters_Scenario_{label}.png"
     plt.savefig(os.path.join(plot_dir, filename))
     plt.close()
